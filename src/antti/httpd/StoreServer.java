@@ -14,7 +14,7 @@ import yak.etc.BaseServer;
 public class StoreServer extends BaseServer {
 	public static void main(String[] args) throws IOException {
 		System.err.println("Hello, World");
-		new StoreServer(9999).run();
+		new StoreServer(9998).run();
 	}
 
 	public StoreServer(int port) {
@@ -40,15 +40,12 @@ public class StoreServer extends BaseServer {
 		try {
 			if (verb.equals("fetch")) {
 				z = doVerbFetch(channel, tnode);
-			} else if (verb.equals("scan")) {
+			} else if (verb.equals("list")) {
 				z = doVerbList(channel, latest);
 			} else if (verb.equals("create")) {
 				z = doVerbCreate(channel, tnode, value, user);
 			} else {
-				z = doVerbDefault(verb);
-			}
-			if (z == null) {
-				z = "(((null)))";
+				throw new IllegalArgumentException("Bad verb: " + verb);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -57,10 +54,6 @@ public class StoreServer extends BaseServer {
 		}
 
 		return new Response(z, 200, "text/plain");
-	}
-
-	public String doVerbDefault(String verb) {
-		throw new IllegalArgumentException("Bad verb: " + verb);
 	}
 
 	public String doVerbList(String channel, String latest) {
@@ -86,11 +79,7 @@ public class StoreServer extends BaseServer {
 		}
 		File chanDir = new File(new File("data"), channel);
 		File tnodeFile = new File(chanDir, tnode);
-		BufferedReader r = new BufferedReader(new InputStreamReader(
-				new FileInputStream(tnodeFile)));
-		String z = r.readLine();
-		r.close();
-		return z;
+		return ReadWholeFile(tnodeFile);
 	}
 
 	public String doVerbCreate(String channel, String tnode, String value,
@@ -106,11 +95,17 @@ public class StoreServer extends BaseServer {
 		}
 
 		File chanDir = new File(new File("data"), channel);
+		chanDir.mkdirs();
 		File tnodeFile = new File(chanDir, tnode);
-		BufferedWriter w = new BufferedWriter(new OutputStreamWriter(
-				new FileOutputStream(tnodeFile)));
-		w.write(value);
-		w.close();
+		WriteWholeFile(tnodeFile, value);
 		return "OK";
+	}
+	
+	public void doVerbBoot() throws IOException {
+		doVerbCreate("777", "101", "first", "nobody");
+		doVerbCreate("777", "102", "second", "nobody");
+		doVerbCreate("777", "103", "third", "nobody");
+		doVerbCreate("888", "104", "fourth", "nobody");
+		doVerbCreate("888", "105", "fifth", "nobody");
 	}
 }
